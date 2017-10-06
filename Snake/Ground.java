@@ -1,4 +1,4 @@
-public class Panel {
+public class Ground {
     private int x;
     private int y;
     public int getX() {
