@@ -4,27 +4,27 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 public class Controller extends JPanel implements ActionListener,KeyListener,Runnable{
-    int marks=0,Speed=0;//marks是得分，Speed是速度
+    int marks=0,Speed=0;
     boolean start = false;
-    int rx=0,ry=0;//定义“吃食”的位置坐标
-    int eat1=0,eat2=0;
+    int rx=0,ry=0;//rx,ry分别代表“吃食”的横纵坐标
+    int eat1=0,eat2=0;//根据eat2-eat1的差值来判断是否需要增加速度
     JDialog dialog = new JDialog();//定义对话框(临时窗口)
     JLabel label = new JLabel("游戏结束！你的分数是"+marks+"。");
     JButton jb1 = new JButton("再来一局");
     JButton jb2 = new JButton("不想玩了");
     Random r = new Random();//产生随机数
-    JButton newGame,stopGame;//定义两个按钮
-    List<Ground> list = new ArrayList<Ground>();//List指的是集合，List<Ground>就代表这个集合中存放了很多个Ground对象
+    JButton newGame,stopGame;
+    List<Ground> list = new ArrayList<Ground>();//List指的是集合，List<Ground>就代表这个集合中存放了很多个Ground对象,泛型
     int temp=0;
     Thread nThread;//定义一个线程
     public Controller() {
         newGame = new JButton("开始");
         stopGame = new JButton("结束");
         /*1.addActionListener添加监听，当鼠标点击这个button的时候会触发监听器
-        * 2.后面的this表示继承的接口类(ActionListener)*/
+        * 2.后面的this表示继承的接口类(ActionListener)的一个实例对象*/
         newGame.addActionListener(this);
         stopGame.addActionListener(this);
-        /*1.第一个this表示当前类(继承的JPanel类)的一个实例，通过this可以调用本类所有方法和属性
+        /*1.第一个this表示当前类(继承的JPanel类)的一个实例对象，通过this可以调用本类所有方法和属性
           2.addKeyListener表示监听键盘，按下、释放或键入键时生成键盘事件
         */
         this.addKeyListener(this);
@@ -33,7 +33,7 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         this.setLayout(new FlowLayout(FlowLayout.LEFT));
         this.add(newGame);
         this.add(stopGame);
-        dialog.setLayout(new GridLayout(2, 1));//GridLayout(int rows, int cols),创建具有指定行数和列数的网格布局
+        dialog.setLayout(new GridLayout(2, 2));//GridLayout(int rows, int cols),创建具有指定行数和列数的网格布局
         //在临时对话框上添加标签和按钮
         dialog.add(label);
         dialog.add(jb1);
