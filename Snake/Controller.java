@@ -9,14 +9,14 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
     int rx=0,ry=0;//定义“吃食”的位置坐标
     int eat1=0,eat2=0;
     JDialog dialog = new JDialog();//定义对话框(临时窗口)
-    JLabel label = new JLabel("你挂了！你的分数是"+marks+"。");
-    JButton jb = new JButton("再来一局");
+    JLabel label = new JLabel("游戏结束！你的分数是"+marks+"。");
+    JButton jb1 = new JButton("再来一局");
     JButton jb2 = new JButton("不想玩了");
     Random r = new Random();//产生随机数
     JButton newGame,stopGame;//定义两个按钮
-    List<Ground> list = new ArrayList<Ground>();
+    List<Ground> list = new ArrayList<Ground>();//List指的是集合，List<Ground>就代表这个集合中存放了很多个Ground对象
     int temp=0;
-    Thread nThread;
+    Thread nThread;//定义一个线程
     public Controller() {
         newGame = new JButton("开始");
         stopGame = new JButton("结束");
@@ -36,12 +36,14 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         dialog.setLayout(new GridLayout(2, 1));//GridLayout(int rows, int cols),创建具有指定行数和列数的网格布局
         //在临时对话框上添加标签和按钮
         dialog.add(label);
-        dialog.add(jb);
-
+        dialog.add(jb1);
+        dialog.add(jb2);
         dialog.setSize(200, 200);
         dialog.setLocation(200, 200);
         dialog.setVisible(false);
-        jb.addActionListener(this);
+        jb1.addActionListener(this);
+        jb2.addActionListener(this);
+
     }
     public void paintComponent(Graphics g)//Graphics类提供基本绘图方法
     {
@@ -81,7 +83,7 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         {
             System.exit(0);
         }
-        if(e.getSource()==jb)//为jb则重新开局
+        if(e.getSource()==jb1)//为jb1则重新开局
         {
             list.clear();
             start=false;
@@ -91,6 +93,10 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
             Speed=0;
             repaint();
         }
+        if(e.getSource()==jb2)//为jb2则重新开局
+        {
+        System.exit(0);
+        }
     }
     private void eat()//定义“吃食”方法
     {
@@ -98,10 +104,10 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         {
             rx = r.nextInt(40);//当吃下一个之后，重新产生一个随机的点
             ry = r.nextInt(30);
-            Ground tempAct = new Ground();
-            tempAct.setX(list.get(list.size()-1).getX());
-            tempAct.setY(list.get(list.size()-1).getY());
-            list.add(tempAct);
+            Ground ground = new Ground();
+            ground.setX(list.get(list.size()-1).getX());
+            ground.setY(list.get(list.size()-1).getY());
+            list.add(ground);
             marks = marks+10;//每吃下一个分数会加10分
             eat1++;
             if(eat1-eat2>=10)//当“吃食”数大于4，会增加一个速度
@@ -111,70 +117,94 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
             }
         }
     }
-    public void otherMove()
+
+    public void howToMove()
     {
-        Ground tempAct = new Ground();
-        for (int i = 0; i < list.size(); i++) {
-            if (i==1) {
+        Ground ground = new Ground();
+        for (int i = 0; i < list.size(); i++)
+        {
+            if (i==1)//只有一个点(还没有“吃食”)的情况，
+            {
+                /*1.list.get(0).getX()返回值是第一个点的横坐标
+                * 2.当i==1的时候，将第二个点的坐标设为第一个点的坐标
+                * 3.执行完之后，i>1,跳入到下一个循环*/
                 list.get(i).setX(list.get(0).getX());
                 list.get(i).setY(list.get(0).getY());
             }
-            else if(i>1){
-                tempAct=list.get(i-1);
+            else if(i>1)//已经“吃食”
+            {
+                ground=list.get(i-1);
+                /*1.list.set(int index, E element),将list集合中第index个元素被的值换成element
+                * 2.已经吃食，就将最后一个的坐标换为吃之前的那一个，其实和前面也是一样，只不过i-1要保证>=0*/
                 list.set(i-1, list.get(i));
-                list.set(i, tempAct);
+                list.set(i,  ground);
             }
 
         }
     }
-    public void move(int x,int y){
-        if (minYes(x, y)) {
-            otherMove();
-            list.get(0).setX(list.get(0).getX()+x);
+    /*在贪吃蛇移动的过程中要注意的两点：
+    * 1.是否“挂了”,如果挂了就结束游戏
+    * 2.如果没有挂,该怎么样变换坐标*/
+    public void moving(int x,int y)
+    {
+        if (gameOn(x, y))//如果游戏在进行中...
+        {
+            howToMove();//随着游戏的过程变换贪吃蛇的坐标
+            list.get(0).setX(list.get(0).getX()+x);//howToMove里面没有强调第一个元素list.get(0)坐标该如何变换
             list.get(0).setY(list.get(0).getY()+y);
             eat();
-            repaint();
-        }else {
-            nThread = null;
-            label.setText("你挂了！你的分数是"+marks+"。");
+            repaint();//吃掉之后重绘曲线
+        }
+        else//如果游戏挂了...
+        {
+            nThread = null;//停掉之前的线程
+            label.setText("分数"+marks);
             dialog.setVisible(true);
         }
 
     }
-    public boolean minYes(int x,int y){
-        if (!maxYes(list.get(0).getX()+x,list.get(0).getY()+ y)) {
+    public boolean gameOn(int x,int y)//判断游戏是否没有“挂”.
+    {
+        if (!gameOver(list.get(0).getX()+x,list.get(0).getY()+ y))//如果游戏不结束
+        {
             return false;
         }
         return true;
     }
-    public boolean maxYes(int x,int y){
-        if (x<0||x>=40||y<0||y>=30) {
+    public boolean gameOver(int x,int y)//判断“挂了"的几种情况
+    {
+        if (x<0||x>=40||y<0||y>=30)//撞墙，“挂了”
+        {
             return false;
         }
-        for (int i = 0; i < list.size(); i++) {
-            if (i>1&&list.get(0).getX()==list.get(i).getX()&&list.get(0).getY()==list.get(i).getY()) {
+        for (int i = 0; i < list.size(); i++)//这种情况也“挂了”
+        {
+            //“吃食”后，有任意的两点坐标相同，“挂了”
+            if (i>1&&list.get(0).getX()==list.get(i).getX()&&list.get(0).getY()==list.get(i).getY())
+            {
                 return false;
             }
         }
         return true;
     }
     public void keyPressed(KeyEvent e) {
-        if(start){
+        if(start)
+        {
             switch (e.getKeyCode()) {
-                case KeyEvent.VK_UP:
-                    move(0, -1);
+                case KeyEvent.VK_UP://键盘往上走，纵坐标减少，左上角坐标为(0,0)
+                    moving(0, -1);
                     temp=1;
                     break;
                 case KeyEvent.VK_DOWN:
-                    move(0, 1);
+                    moving(0, 1);
                     temp=2;
                     break;
                 case KeyEvent.VK_LEFT:
-                    move(-1, 0);
+                    moving(-1, 0);
                     temp=3;
                     break;
                 case KeyEvent.VK_RIGHT:
-                    move(1, 0);
+                    moving(1, 0);
                     temp=4;
                     break;
 
@@ -189,16 +219,16 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         while (start) {
             switch (temp) {
                 case 1:
-                    move(0, -1);
+                    moving(0, -1);
                     break;
                 case 2:
-                    move(0, 1);
+                    moving(0, 1);
                     break;
                 case 3:
-                    move(-1, 0);
+                    moving(-1, 0);
                     break;
                 case 4:
-                    move(1, 0);
+                    moving(1, 0);
                     break;
                 default:
                     break;
