@@ -3,7 +3,7 @@ import javax.swing.*;
 import static com.sun.glass.ui.Cursor.setVisible;
 
 public class Game extends JFrame {
-    public snakeMain() {
+    public Game() {
         Controller ctrl = new Controller();
         add(ctrl);
         JFrame jf=new JFrame();
