@@ -4,7 +4,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 public class Controller extends JPanel implements ActionListener,KeyListener,Runnable{
-    int marks=0,Speed=0;
+    int marks=0,speed=0;
     boolean start = false;
     int rx=0,ry=0;//rx,ry分别代表“吃食”的横纵坐标
     int eat1=0,eat2=0;//根据eat2-eat1的差值来判断是否需要增加速度
@@ -33,29 +33,36 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         this.setLayout(new FlowLayout(FlowLayout.LEFT));
         this.add(newGame);
         this.add(stopGame);
-        dialog.setLayout(new GridLayout(2, 2));//GridLayout(int rows, int cols),创建具有指定行数和列数的网格布局
+        dialog.setLayout(new GridLayout(3, 3));//GridLayout(int rows, int cols),创建具有指定行数和列数的网格布局
         //在临时对话框上添加标签和按钮
         dialog.add(label);
         dialog.add(jb1);
         dialog.add(jb2);
+        dialog.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         dialog.setSize(200, 200);
         dialog.setLocation(200, 200);
         dialog.setVisible(false);
         jb1.addActionListener(this);
         jb2.addActionListener(this);
-
     }
     public void paintComponent(Graphics g)//Graphics类提供基本绘图方法
     {
-        super.paintComponent(g);//super.paintComponent(g)是父类JPanel里的方法,会把整个面板用背景色重画一遍,起到清屏的作用
-        g.drawRect(10, 40, 400, 300);//drawRect绘制矩形
+        /*1.super.paintComponent(g)是父类JPanel里的方法,会把整个面板用背景色重画一遍,起到清屏的作用
+        * 2.这里画的图就是黑线里面的矩形*/
+        super.paintComponent(g);
+        g.drawRect(10, 40, 400, 300);//drawRect绘制矩形，(10,40)表示矩形左上角点的坐标
         g.drawString("分数："+marks, 150, 15);//drawString在指定位置绘制指定文本字符串
-        g.drawString("速度："+Speed, 150, 35);
+        g.drawString("速度："+speed, 150, 35);
         g.setColor(new Color(255, 0, 0));
-        if(start){
+        if(start)
+        {
+            /*1.fillRect:用预定的颜色填充一个矩形，得到一个着色的矩形块
+            * 2.其中参数x和y指定左上角的位置，参数width和height是矩形的宽和高
+            * 3.蛇的位置和rx和ry有关,因此其位置是随机的,而吃食的位置和rx及ry无关，是固定的*/
             g.fillRect(10+rx*10, 40+ry*10, 10, 10);
-            for (int i = 0; i < list.size(); i++) {
-                g.setColor(new Color(0, 0, 255));
+            for (int i = 0; i < list.size(); i++)
+            {
+                g.setColor(new Color(0, 0, 0));
                 g.fillRect(10+list.get(i).getX()*10, 40+list.get(i).getY()*10, 10, 10);
             }
         }
@@ -66,14 +73,17 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
     {
         if(e.getSource()==newGame)//getSource，最初发生event的对象
         {
-            newGame.setEnabled(false);//为true则使button的事件发生，否则不发生
+            /*1.为true则使button的事件发生，否则不发生
+             *2.这里鼠标点击后,事件并不是立即发生,而是需要有键盘的移动,事件才发生
+             */
+            newGame.setEnabled(false);
             start = true;
             rx=r.nextInt(40);//产生40以内的随机数
             ry=r.nextInt(30);
-            Ground tempAct = new Ground();
-            tempAct.setX(20);
-            tempAct.setY(15);
-            list.add(tempAct);
+            Ground ground= new Ground();
+            ground.setX(10);
+            ground.setY(10);
+            list.add(ground);
             this.requestFocus();//光标进入控件中
             nThread = new Thread(this);
             nThread.start();
@@ -85,17 +95,17 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         }
         if(e.getSource()==jb1)//为jb1则重新开局
         {
-            list.clear();
+            list.clear();//移除所有元素
             start=false;
-            newGame.setEnabled(true);
+            newGame.setEnabled(true);//重新开局之后,直接移动,不等键盘移动
             dialog.setVisible(false);
             marks=0;
-            Speed=0;
+            speed=0;
             repaint();
         }
-        if(e.getSource()==jb2)//为jb2则重新开局
+        if(e.getSource()==jb2)//为jb2则退出
         {
-        System.exit(0);
+            System.exit(0);
         }
     }
     private void eat()//定义“吃食”方法
@@ -105,15 +115,19 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
             rx = r.nextInt(40);//当吃下一个之后，重新产生一个随机的点
             ry = r.nextInt(30);
             Ground ground = new Ground();
+
+            //question1
+
             ground.setX(list.get(list.size()-1).getX());
             ground.setY(list.get(list.size()-1).getY());
             list.add(ground);
+
             marks = marks+10;//每吃下一个分数会加10分
             eat1++;
             if(eat1-eat2>=10)//当“吃食”数大于4，会增加一个速度
             {
                 eat2=eat1;//并将eat1的值赋给eat2
-                Speed++;
+                speed++;
             }
         }
     }
@@ -158,13 +172,15 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
         else//如果游戏挂了...
         {
             nThread = null;//停掉之前的线程
-            label.setText("分数"+marks);
-            dialog.setVisible(true);
+            label.setText("分数"+marks);//给出分数
+            dialog.setVisible(true);//弹出对话框
         }
 
     }
-    public boolean gameOn(int x,int y)//判断游戏是否没有“挂”.
+    public boolean gameOn(int x,int y)//游戏没有“挂”
     {
+        //question2
+
         if (!gameOver(list.get(0).getX()+x,list.get(0).getY()+ y))//如果游戏不结束
         {
             return false;
@@ -213,8 +229,14 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
             }
         }
     }
-    public void keyReleased(KeyEvent e) {}
-    public void keyTyped(KeyEvent e) {}
+    public void keyReleased(KeyEvent e) //键被弹起,什么事情都不用干
+    {
+
+    }
+    public void keyTyped(KeyEvent e)//有字节输入,什么事情也不干
+    {
+
+    }
     public void run() {
         while (start) {
             switch (temp) {
@@ -235,7 +257,7 @@ public class Controller extends JPanel implements ActionListener,KeyListener,Run
             }
             repaint();
             try {
-                Thread.sleep(300-30*Speed);
+                Thread.sleep(300-30*speed);//线程休息时间
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
